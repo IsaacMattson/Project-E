@@ -1,6 +1,7 @@
 import math
 
 from funcs import *
+from error import *
 
 Symbol = str              
 Number = (int, float)     
@@ -46,7 +47,6 @@ class Environment(dict):
     def find (self, key):
             return self if (key in self) else self.parent.find(key)
 
-    
 
 def native_env() -> Environment:
     env = Environment()
@@ -66,8 +66,11 @@ def native_env() -> Environment:
 global_env = native_env();
 
 def lex(text) -> str:
-    return text.replace("(", " ( ").replace(")", " ) ").split()
-
+    lexed = text.replace("(", " ( ").replace(")", " ) ").split()
+    if lexed.count(')') == lexed.count('('):
+        return lexed;
+    else:
+        return Error("?");
 
 def parse(program) -> list:  
     tokens = []
@@ -131,7 +134,12 @@ def repl():
         if _input == "!QUIT":
             break
         else:
-            print(solve(parse(lex(_input))))
+            lexed = lex(_input)
+            if isinstance(lexed, Error):
+                print(lexed)
+            else:
+                parsed = parse(lexed)
+                print(solve(parsed))
             
 
 repl();

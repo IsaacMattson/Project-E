@@ -14,7 +14,8 @@ class T:
     INT = "INT"
     BOOL = "BOOL"
     SYMBOL = "SYMBOL"
-    
+
+class label(Exception): pass
     
 class Token:
     def __init__(self,_type,value):
@@ -34,7 +35,7 @@ class Procedure:
         self.env = env
 
     def __call__(self, *args):
-        return solve(self.body, Environment(self.parms, args, self.env))
+        return eval(self.body, Environment(self.parms, args, self.env))
         
 
 
@@ -45,6 +46,9 @@ class Environment(dict):
         self.parent = parent;
         
     def find (self, key):
+
+
+        
             return self if (key in self) else self.parent.find(key)
 
 
@@ -58,7 +62,7 @@ def native_env() -> Environment:
         'eq?':      eq,
         'car':      lambda lst : lst[0],
         'cdr':      lambda lst : lst[1:],
-        'quote':    lambda lst : lst
+        'load':     lambda t : solve(load_prgm(t))
         
     })
     return env
@@ -68,9 +72,9 @@ global_env = native_env();
 def lex(text) -> str:
     lexed = text.replace("(", " ( ").replace(")", " ) ").split()
     if lexed.count(')') == lexed.count('('):
-        return lexed;
+        return lexed, None;
     else:
-        return Error("?");
+        return None, Error("?");
 
 def parse(program) -> list:  
     tokens = []
@@ -95,7 +99,10 @@ def parse(program) -> list:
             program.pop(0)
     return tokens
 
-def solve(program: (Token, list), env = global_env):
+def crawl(prgm):
+    
+
+def eval(program: (Token, list), env = global_env):
     if isinstance(program, Token):
         
         if program._type == 'SYMBOL':
@@ -103,9 +110,9 @@ def solve(program: (Token, list), env = global_env):
         elif program._type == 'INT' or program._type == 'BOOL':
             return program.value
     elif  isinstance(program[0], list) :
-        return solve(program[0], env)
+        return eval(program[0], env)
     elif program[0]._type == T.INT or program[0]._type == T.BOOL:
-        return [solve(arg, env) for arg in program]
+        return [eval(arg, env) for arg in program]
     
     else:
         
@@ -115,31 +122,56 @@ def solve(program: (Token, list), env = global_env):
         if op == "lambda":
             return Procedure(program[1], program[2], env)
         elif op == "define":
-            env[program[1].value] = solve(program[2], env)
+            env[program[1].value] = eval(program[2], env)
         elif op == "if":
-            if solve(args[0], env) == "#t":
-                return solve(args[1], env)
-            else: return solve(args[2], env)
+            if eval(args[0], env) == "#t":
+                return eval(args[1], env)
+            else: return eval(args[2], env)
+        elif op == "quote":
+            arg = args[0]
+            if isinstance(arg, Token):
+                return arg.value
+            
                 
         else:        
-            procedure = solve(program[0], env)
-            values = [solve(arg, env) for arg in program[1:]]
+            procedure = eval(program[0], env)
+            values = [eval(arg, env) for arg in program[1:]]
             return procedure(*values)
+
+def load_prgm(fileName):
+    try:
+        file = open(fileName, "r")
+    except:
+        return Error(f"File {fileName} not found!");
+    return file.read()
+
+def solve(text):
+    error = None
+    
+    try:
+        if isinstance(text, Error): error = text; raise label
+        lexed,error = lex(text)
+        if error != None: raise label
+        parsed = parse(lexed)
+        result = eval(parsed)
+    except label:
+        return error
+    return result
+        
 
 def repl():
 
     _input = ""
+
+    print(solve(load_prgm("test.ls")))
     while True:
         _input = input("Geoff>")
         if _input == "!QUIT":
             break
         else:
-            lexed = lex(_input)
-            if isinstance(lexed, Error):
-                print(lexed)
-            else:
-                parsed = parse(lexed)
-                print(solve(parsed))
+            print(solve(_input))
             
+
+
 
 repl();

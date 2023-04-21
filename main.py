@@ -6,7 +6,9 @@ Symbol = str
 Number = (int, float)     
 Atom   = (Symbol, Number)
 List   = list             
-Exp    = (Atom, List)        
+Exp    = (Atom, List)
+
+errors = []
 
 class symbol():
     def __init__(self, value):
@@ -86,7 +88,21 @@ def parse(expr) -> list:
     return tokens
 
 def crawl(prgm):
-    pass
+    errors = []
+
+    if isinstance(prgm, list):
+        op = prgm[0]
+        if prgm[0] == 'if':
+            if len(prgm) != 4:
+                errors.append(Error("'if' special form requires three arguments!"))
+        if op == 'define':
+            if len(prgm) != 3:
+                errors.append(Error("'define' special form requires two arguments!"))
+
+        for arg in prgm[1:] :
+            errors.append(crawl(arg))
+
+    return errors
 
 def eval(expr , env = global_env):
     if isinstance(expr, list) == False:
@@ -116,6 +132,9 @@ def eval(expr , env = global_env):
             print(f"### op is '{procedure}', args are '{values}'")
             return procedure(*values)
 
+def print_errors():
+    global errors
+
 def load_prgm(fileName):
     try:
         file = open(fileName, "r")
@@ -133,6 +152,9 @@ def solve(text):
             lexed,error = lex(text)
             if error != None: raise label
             parsed = parse(lexed)[0]
+
+            print(crawl(parsed))
+        
             result = eval(parsed)
         except label:
             return error

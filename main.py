@@ -2,17 +2,23 @@ import math
 from funcs import *
 from error import *
 
-Symbol = str              
-Number = (int, float)     
-Atom   = (Symbol, Number)
-List   = list             
-Exp    = (Atom, List)
+            
+
+
+literal = (int, dict)
 
 errors = []
 
-class symbol():
+class Symbol():
     def __init__(self, value):
         self.value = value;
+        
+    def __repr__(self):
+        return f"<{self.value}>";
+
+    def __eq__(self, other):
+        return self.value == other.__repr__()
+    
 
 class label(Exception): pass
     
@@ -26,6 +32,7 @@ class Procedure:
 
     def __call__(self, *args):
         return eval(self.body, Environment(self.parms, args, self.env))
+    
         
 
 
@@ -49,8 +56,8 @@ def native_env() -> Environment:
         'eq?':      eq,
         'car':      lambda lst : lst[0],
         'cdr':      lambda lst : lst[1:],
-        'load':     lambda t : solve(load_prgm(t))
-    
+        'load':     lambda t : solve(load_prgm(t)),
+        'dict':     lambda x ,y: dict(zip(x,y))
         
     })
     return env
@@ -83,7 +90,7 @@ def parse(expr) -> list:
             tokens.append(word)
             expr.pop(0)
         else:
-            tokens.append(word)
+            tokens.append(Symbol(word))
             expr.pop(0)
     return tokens
 
@@ -106,8 +113,8 @@ def crawl(prgm):
 
 def eval(expr , env = global_env):
     if isinstance(expr, list) == False:
-        if isinstance(expr, str):
-            return env.find(expr)[expr]
+        if isinstance(expr, Symbol):
+            return env.find(expr.value)[expr]
         else:
             return expr
     else:

@@ -1,6 +1,7 @@
 import math
 from funcs import *
 from error import *
+from types import FunctionType as Function
 
             
 
@@ -66,8 +67,13 @@ def native_env() -> Environment:
         'eq?':      eq,
         'car':      lambda lst : lst[0],
         'cdr':      lambda lst : lst[1:],
+<<<<<<< HEAD
+        'eval-file':     lambda t : solve(load_prgm(t))
+    
+=======
         'load':     lambda t : solve(load_prgm(t)),
         'dict':     lambda x ,y: dict(zip(x,y))
+>>>>>>> e350ca8fac260d656cbc89c637cca7df2f35ef96
         
     })
     return env

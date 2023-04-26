@@ -1,6 +1,7 @@
 import math
 from funcs import *
 from error import *
+from types import FunctionType as Function
 
 Symbol = str              
 Number = (int, float)     
@@ -35,8 +36,18 @@ class Environment(dict):
         self.update(zip(keys, values));
         self.parent = parent;
         
-    def find (self, key):       
-            return self if (key in self) else self.parent.find(key)
+    def find (self, key):
+            if key in self:
+                return self
+            else:
+                if self.parent != None:
+                   return self.parent.find(key)
+                else:
+                   return Error(f"Symbol '{key}' not found!"); 
+                
+                    
+        
+            
 
 
 def native_env() -> Environment:
@@ -49,7 +60,7 @@ def native_env() -> Environment:
         'eq?':      eq,
         'car':      lambda lst : lst[0],
         'cdr':      lambda lst : lst[1:],
-        'load':     lambda t : solve(load_prgm(t))
+        'eval-file':     lambda t : solve(load_prgm(t))
     
         
     })
@@ -107,7 +118,7 @@ def crawl(prgm):
 def eval(expr , env = global_env):
     if isinstance(expr, list) == False:
         if isinstance(expr, str):
-            return env.find(expr)[expr]
+            return env.find(expr)[expr] if isinstance(env.find(expr), Error) != True else  env.find(expr)
         else:
             return expr
     else:
@@ -128,10 +139,15 @@ def eval(expr , env = global_env):
                 return args[0]
         else:        
             procedure = eval(expr[0], env)
-            values = [eval(arg, env) for arg in expr[1:]]
-            print(f"### op is '{procedure}', args are '{values}'")
-            return procedure(*values)
-
+            if isinstance(procedure, (Procedure, Function)):
+                values = [eval(arg, env) for arg in expr[1:]]
+##              print(f"### op is '{procedure}', args are '{values}'")
+                return procedure(*values)
+            elif isinstance(procedure, Error):
+                return procedure;
+            else:
+                return Error("Something bad happened!");
+                    
 def print_errors():
     global errors
 
@@ -144,23 +160,22 @@ def load_prgm(fileName):
 
 def solve(text):
 
-    try:
-        error = None
-        
-        try:
-            if isinstance(text, Error): error = text; raise label
-            lexed,error = lex(text)
-            if error != None: raise label
-            parsed = parse(lexed)[0]
 
-            print(crawl(parsed))
-        
-            result = eval(parsed)
-        except label:
-            return error
-        return result
-    except: 
-        return '?.' # The experienced user will know what is wrong. 
+    error = None
+    
+    try:
+        if isinstance(text, Error): error = text; raise label
+        lexed,error = lex(text)
+        if error != None: raise label
+        parsed = parse(lexed)[0]
+
+        print(crawl(parsed))
+    
+        result = eval(parsed)
+    except label:
+        return error
+    return result
+
 
 def repl():
 

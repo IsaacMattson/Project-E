@@ -1,13 +1,12 @@
 import math
 from funcs import *
 from error import *
-
+import re
             
 
 
 literal = (int, dict)
-
-errors = []
+isof = isinstance
 
 class Symbol():
     def __init__(self, value):
@@ -33,13 +32,13 @@ class Procedure:
         self.body = body
         self.env = env
         self.isSpecial = isSpecial
+        self.argCount = len(parms)
 
     def __call__(self, *args):
         return eval(self.body, Environment(self.parms, args, self.env))
+
     
-        
-
-
+    
 class Environment(dict):
 
     def __init__(self, keys = (), values = (), parent = None):
@@ -54,12 +53,12 @@ class Environment(dict):
                    return self.parent.find(key)
                 else:
                    return Error(f"Symbol '{key}' not found!"); 
-                
+    def __repr__(self):
+        s = ""
+        for key in self.keys():
+            s = s+f"[{key}: {self[key]}]\n"
+        return s[:-1]
                     
-        
-            
-
-
 def native_env() -> Environment:
     env = Environment()
     env.update({
@@ -79,7 +78,7 @@ def native_env() -> Environment:
 global_env = native_env();
 
 def lex(text) -> str:
-    lexed = text.replace("(", " ( ").replace(")", " ) ").split()
+    lexed = re.split(" | '.*' ",text.replace("(", " ( ").replace(")", " ) "))
     if lexed.count(')') == lexed.count('('):
         return lexed, None;
     else:
@@ -91,7 +90,9 @@ def parse(expr) -> list:
     while len(expr) != 0:
 
         word = expr[0]
-        if word == "(":
+        if word == '':
+            expr.pop(0)
+        elif word == "(":
             expr.pop(0)
             tokens.append(parse(expr))
         elif word == ")":
@@ -99,6 +100,9 @@ def parse(expr) -> list:
             return tokens
         elif word.isnumeric():
             tokens.append(int(word))
+            expr.pop(0)
+        elif word[0] == "'":
+            tokens.append(word[1:-1])
             expr.pop(0)
         elif word == "#t" or word == "#f":
             tokens.append(word)
@@ -154,8 +158,8 @@ def eval(expr , env = global_env):
         elif op == Symbol("quote"):
             return args[0]
         elif op == Symbol("begin"):
-            for arg in args[:-2]: eval(arg)
-            return eval(args[-1])
+            for arg in args[:-2]: eval(arg, env)
+            return eval(args[-1], env)
         else:        
             procedure = eval(expr[0], env)
             if isinstance(procedure,Error): #Checks if the procedure lookup returned an error
@@ -167,6 +171,7 @@ def eval(expr , env = global_env):
                     if isinstance(value, Error): #Checks if any of the variable lookup returned an error
                         return value
                     values.append(value)
+                print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
                 return procedure(*values)
 
                     
@@ -188,8 +193,9 @@ def solve(text):
     try:
         if isinstance(text, Error): error = text; raise label
         lexed,error = lex(text)
+        print(lexed)
         if error != None: raise label
-        parsed = parse(lexed)[0]
+        parsed = parse(lexed)[0] # [1:-1] and [0] are need because parser and lexer weirdness.
 
         print(crawl(parsed))
     
@@ -202,7 +208,7 @@ def solve(text):
 def repl():
 
     _input = ""
-    solve("(load (quote stdlib.lisp))")
+    solve("(load 'stdlib.lisp')")
     while True:
         _input = input("Geoff>")
         if _input == "!QUIT":

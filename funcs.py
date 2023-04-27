@@ -30,3 +30,7 @@ def eq(*args):
     for arg in args[1:]:
         if arg != arg1: return '#f'
     return '#t'
+
+
+def add_dict(a,b):
+    a.update(b)

@@ -70,7 +70,9 @@ def native_env() -> Environment:
         Symbol('car'):      lambda lst : lst[0],
         Symbol('cdr'):      lambda lst : lst[1:],
         Symbol('load'):     lambda t : solve(load_prgm(t)),
-        Symbol('dict'):     lambda x ,y: dict(zip(x,y))
+        
+        Symbol('dict'):     lambda x ,y: dict(zip(x,y)),
+        Symbol('append-dict'): add_dict
 
     })
     return env
@@ -145,7 +147,7 @@ def eval(expr , env = global_env):
         
         op = expr[0]
         args = expr[1:]
-        if isinstance(op, int):
+        if isinstance(op, (int, str, dict)):
             return expr
         elif op == Symbol("lambda"):
             return Procedure(expr[1], expr[2], env)
@@ -158,7 +160,8 @@ def eval(expr , env = global_env):
         elif op == Symbol("quote"):
             return args[0]
         elif op == Symbol("begin"):
-            for arg in args[:-2]: eval(arg, env)
+            for arg in args[:-1]:
+                eval(arg, env)
             return eval(args[-1], env)
         else:        
             procedure = eval(expr[0], env)
@@ -171,7 +174,7 @@ def eval(expr , env = global_env):
                     if isinstance(value, Error): #Checks if any of the variable lookup returned an error
                         return value
                     values.append(value)
-                print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
+                #print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
                 return procedure(*values)
 
                     
@@ -193,11 +196,11 @@ def solve(text):
     try:
         if isinstance(text, Error): error = text; raise label
         lexed,error = lex(text)
-        print(lexed)
+        #print(lexed)
         if error != None: raise label
         parsed = parse(lexed)[0] # [1:-1] and [0] are need because parser and lexer weirdness.
 
-        print(crawl(parsed))
+        #print(crawl(parsed))
     
         result = eval(parsed)
     except label:

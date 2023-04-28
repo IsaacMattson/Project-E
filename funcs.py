@@ -34,3 +34,7 @@ def eq(*args):
 
 def add_dict(a,b):
     a.update(b)
+
+def l_input(string):
+    return input(string);
+    

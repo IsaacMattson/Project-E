@@ -80,12 +80,26 @@ def native_env() -> Environment:
 global_env = native_env();
 
 def lex(text) -> str:
-    lexed = re.split(" | '.*' ",text.replace("(", " ( ").replace(")", " ) "))
-    if lexed.count(')') == lexed.count('('):
-        return lexed, None;
-    else:
-        return None, Error("?");
-
+    tokens = []
+    word = ''
+    text = text.replace(')', ' ) ').replace('(', ' ( ')
+    for i in range(len(text)):
+        cc = text[i]
+        if cc.isspace():
+            if word != '':
+                tokens.append(word);
+                word = '';
+        elif cc == '"':
+            start = i
+            while cc != '"':
+                i+=1
+            tokens.append(word)
+            word = ""
+        else:
+            word = word + cc
+    
+    return tokens, None
+        
 def parse(expr) -> list:  
     tokens = []
 
@@ -174,7 +188,7 @@ def eval(expr , env = global_env):
                     if isinstance(value, Error): #Checks if any of the variable lookup returned an error
                         return value
                     values.append(value)
-                #print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
+                print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
                 return procedure(*values)
 
                     
@@ -196,7 +210,7 @@ def solve(text):
     try:
         if isinstance(text, Error): error = text; raise label
         lexed,error = lex(text)
-        #print(lexed)
+        print(lexed)
         if error != None: raise label
         parsed = parse(lexed)[0] # [1:-1] and [0] are need because parser and lexer weirdness.
 

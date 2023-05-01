@@ -79,27 +79,49 @@ def native_env() -> Environment:
 
 global_env = native_env();
 
-def lex(text) -> str:
-    tokens = []
-    word = ''
-    text = text.replace(')', ' ) ').replace('(', ' ( ')
-    for i in range(len(text)):
-        cc = text[i]
-        if cc.isspace():
-            if word != '':
-                tokens.append(word);
-                word = '';
-        elif cc == '"':
-            start = i
-            while cc != '"':
-                i+=1
-            tokens.append(word)
-            word = ""
-        else:
-            word = word + cc
+
     
-    return tokens, None
+
+def lex(text) -> str:
+   
+    tokens = []
+    i = -1
+    cc = ''
+    text = text.replace(')', ' ) ').replace('(', ' ( ')
+
+    def advance():
+        nonlocal i
+        nonlocal cc
+        nonlocal text
         
+        i = i+1
+        cc = text[i]
+
+    def make_token():
+        nonlocal i
+        nonlocal cc
+        nonlocal text
+
+        word = ''
+        while cc.isspace == False:
+            word += cc
+            advance()        
+        return word
+  
+    while i < len(text)-1:
+        advance()
+        if cc.isspace:
+            pass
+        elif cc == '"':
+            word, i = make_string(text, i)
+            tokens.append(word)
+        else:
+            word = make_token()
+            tokens.append(word)
+    
+        
+    return tokens, None
+
 def parse(expr) -> list:  
     tokens = []
 
@@ -212,7 +234,7 @@ def solve(text):
         lexed,error = lex(text)
         print(lexed)
         if error != None: raise label
-        parsed = parse(lexed)[0] # [1:-1] and [0] are need because parser and lexer weirdness.
+        parsed = parse(lexed)[0]
 
         #print(crawl(parsed))
     
@@ -234,6 +256,5 @@ def repl():
             print(solve(_input))
             
 
-
-
+lex('(+ 12 34 cat)')
 repl();

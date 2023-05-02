@@ -84,40 +84,10 @@ global_env = native_env();
 
 def lex(text) -> str:
    
-    tokens = []
-    i = -1
-    cc = ''
+    regex = r'("[^"]*"|\S+)' #This is the regex to create tokens could be changed to accomdate new grammers
     text = text.replace(')', ' ) ').replace('(', ' ( ')
-
-    def advance():
-        nonlocal i
-        nonlocal cc
-        nonlocal text
-        
-        i = i+1
-        cc = text[i]
-
-    def make_token():
-        nonlocal i
-        nonlocal cc
-        nonlocal text
-
-        word = ''
-        while cc.isspace == False:
-            word += cc
-            advance()        
-        return word
-  
-    while i < len(text)-1:
-        advance()
-        if cc.isspace:
-            pass
-        elif cc == '"':
-            word, i = make_string(text, i)
-            tokens.append(word)
-        else:
-            word = make_token()
-            tokens.append(word)
+    tokens = re.findall(regex,text)
+    
     
         
     return tokens, None
@@ -139,7 +109,7 @@ def parse(expr) -> list:
         elif word.isnumeric():
             tokens.append(int(word))
             expr.pop(0)
-        elif word[0] == "'":
+        elif word[0] == '"':
             tokens.append(word[1:-1])
             expr.pop(0)
         elif word == "#t" or word == "#f":
@@ -201,8 +171,10 @@ def eval(expr , env = global_env):
             return eval(args[-1], env)
         else:        
             procedure = eval(expr[0], env)
-            if isinstance(procedure,Error): #Checks if the procedure lookup returned an error
+            if isinstance(procedure, Error): #Checks if the procedure lookup returned an error
                 return procedure
+            elif isinstance(procedure, (int, float, dict, str))
+                return Error()
             else:
                 values = []
                 for arg in expr[1:]:

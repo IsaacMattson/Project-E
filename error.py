@@ -11,7 +11,7 @@ class MissingSymbolError(Error):
         return f"Error: Symbol \"{self.error}\" is not found!";
 
 class NotAProcError(Error):
-    
+    pass
 
 
     

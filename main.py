@@ -69,10 +69,11 @@ def native_env() -> Environment:
         Symbol('eq?'):      eq,
         Symbol('car'):      lambda lst : lst[0],
         Symbol('cdr'):      lambda lst : lst[1:],
-        Symbol('load'):     lambda t : solve(load_prgm(t)),
-        
+        Symbol('load'):     lambda p : solve(p),
+        Symbol('slurp'):    lambda f : load_prgm(f),
         Symbol('dict'):     lambda x ,y: dict(zip(x,y)),
-        Symbol('append-dict'): add_dict
+        Symbol('append-dict!'): add_dict,
+        Symbol('display'):  print
 
     })
     return env
@@ -113,7 +114,7 @@ def parse(expr) -> list:
             tokens.append(word[1:-1])
             expr.pop(0)
         elif word == "#t" or word == "#f":
-            tokens.append(word)
+            tokens.append(True if word == "#t" else False)
             expr.pop(0)
         else:
             tokens.append(Symbol(word))
@@ -160,7 +161,7 @@ def eval(expr , env = global_env):
         elif op == Symbol("define"):
             env[args[0]] = eval(args[1], env)
         elif op == Symbol("if"):
-            if eval(args[0], env) == "#t":
+            if eval(args[0], env) == False:
                 return eval(args[1], env)
             else: return eval(args[2], env)
         elif op == Symbol("quote"):
@@ -169,12 +170,19 @@ def eval(expr , env = global_env):
             for arg in args[:-1]:
                 eval(arg, env)
             return eval(args[-1], env)
+        elif op == Symbol("let"):
+            bindingClause, letBody = args[0:2]
+            newEnv = Environment(parent = env)
+            for subClause in bindingClause:
+                newEnv[subClause[0]] = subClause[1]
+            return eval(letBody, newEnv)
+            
         else:        
             procedure = eval(expr[0], env)
             if isinstance(procedure, Error): #Checks if the procedure lookup returned an error
                 return procedure
-            elif isinstance(procedure, (int, float, dict, str))
-                return Error()
+            elif isinstance(procedure, (int, float, dict, str)):
+                return Error("Error: Not Callable");
             else:
                 values = []
                 for arg in expr[1:]:
@@ -219,7 +227,7 @@ def solve(text):
 def repl():
 
     _input = ""
-    solve("(load 'stdlib.lisp')")
+    solve('(load (slurp "stdlib.lisp"))')
     while True:
         _input = input("Geoff>")
         if _input == "!QUIT":

@@ -1,3 +1,12 @@
+===SPECIAL=FORMS===
+begin
+let 
+define
+set!
+lambda
+quote
+`
+
 ===EQUALITY===
 Eq?
 <
@@ -34,11 +43,20 @@ string-length
 
 ===DICTIONARYS===
 dict-create
-dict-append
-dict-remove
+dict-append!
+dict-remove!
 dict-get
 
 ===FILES===
 slurp
-write-to-file
-append-to-file
+write-to-file!
+append-to-file!
+
+-------------------------------------
+
+==ERRORS==
+Not a Procedure Error
+Unbound Identifier Error
+Improper Argument Amount Error
+Math Error
+Type Error

@@ -73,8 +73,23 @@ def native_env() -> Environment:
         Symbol('slurp'):    lambda f : load_prgm(f),
         Symbol('dict'):     lambda x ,y: dict(zip(x,y)),
         Symbol('append-dict!'): add_dict,
-        Symbol('display'):  print
+        Symbol('display'):  print,
+        Symbol('input'):    lambda x: input(x),
 
+        #Strings
+        Symbol('combine-strings'): lambda a,b : a+b,
+        Symbol('substring'): lambda s, a, b: s[a:b],
+        
+
+        #dicts
+
+
+        #lists
+        Symbol("len"): len,
+
+        #conversions
+        Symbol("string->list"): lambda s: [x for x in s]
+        
     })
     return env
 
@@ -161,7 +176,7 @@ def eval(expr , env = global_env):
         elif op == Symbol("define"):
             env[args[0]] = eval(args[1], env)
         elif op == Symbol("if"):
-            if eval(args[0], env) == False:
+            if eval(args[0], env) == True:
                 return eval(args[1], env)
             else: return eval(args[2], env)
         elif op == Symbol("quote"):
@@ -176,7 +191,13 @@ def eval(expr , env = global_env):
             for subClause in bindingClause:
                 newEnv[subClause[0]] = subClause[1]
             return eval(letBody, newEnv)
-            
+        elif op == Symbol("set!"):
+            var, value = args[0], args[1]
+            try:
+                env[var]
+                env[var] = value
+            except:
+                return MissingSymbolError(var)
         else:        
             procedure = eval(expr[0], env)
             if isinstance(procedure, Error): #Checks if the procedure lookup returned an error
@@ -190,7 +211,7 @@ def eval(expr , env = global_env):
                     if isinstance(value, Error): #Checks if any of the variable lookup returned an error
                         return value
                     values.append(value)
-                print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
+                #print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
                 return procedure(*values)
 
                     
@@ -212,7 +233,7 @@ def solve(text):
     try:
         if isinstance(text, Error): error = text; raise label
         lexed,error = lex(text)
-        print(lexed)
+        #print(lexed)
         if error != None: raise label
         parsed = parse(lexed)[0]
 

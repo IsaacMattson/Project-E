@@ -79,16 +79,22 @@ def native_env() -> Environment:
         #Strings
         Symbol('combine-strings'): lambda a,b : a+b,
         Symbol('substring'): lambda s, a, b: s[a:b],
+        Symbol('not'): lambda b: False if b else True,
         
 
         #dicts
-
+        Symbol('combine-dicts'): lambda a, b: a|b,
 
         #lists
-        Symbol("len"): len,
+        Symbol("len"):      len,
+        Symbol("list"):     lambda *x: list(x),
 
         #conversions
-        Symbol("string->list"): lambda s: [x for x in s]
+        Symbol("string->list"): lambda s: [x for x in s],
+
+        #test
+        Symbol('lst?'):     lambda s : isinstance(s, list),
+        Symbol('null?'):    lambda s : s == None
         
     })
     return env
@@ -165,14 +171,15 @@ def eval(expr , env = global_env):
 
         else:
             return expr
-    else:
-        
+    elif expr == []:
+        return None
+    else:      
         op = expr[0]
         args = expr[1:]
         if isinstance(op, (int, str, dict)):
             return expr
         elif op == Symbol("lambda"):
-            return Procedure(expr[1], expr[2], env)
+            return Procedure(args[0], args[1], env)
         elif op == Symbol("define"):
             env[args[0]] = eval(args[1], env)
         elif op == Symbol("if"):
@@ -211,7 +218,7 @@ def eval(expr , env = global_env):
                     if isinstance(value, Error): #Checks if any of the variable lookup returned an error
                         return value
                     values.append(value)
-                #print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
+                print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
                 return procedure(*values)
 
                     
@@ -249,6 +256,7 @@ def repl():
 
     _input = ""
     solve('(load (slurp "stdlib.lisp"))')
+    
     while True:
         _input = input("Geoff>")
         if _input == "!QUIT":
@@ -258,4 +266,5 @@ def repl():
             
 
 lex('(+ 12 34 cat)')
+
 repl();

@@ -28,8 +28,8 @@ def div(*nums):
 def eq(*args):
     arg1 = args[0]
     for arg in args[1:]:
-        if arg != arg1: return True
-    return False
+        if arg != arg1: return False
+    return True
 
 
 def add_dict(a,b):

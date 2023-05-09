@@ -179,9 +179,10 @@ def eval(expr , env = global_env):
         if isinstance(op, (int, str, dict)):
             return expr
         elif op == Symbol("lambda"):
-            return Procedure(args[0], args[1], env)
+            return Procedure(expr[1], expr[2], env)
         elif op == Symbol("define"):
-            env[args[0]] = eval(args[1], env)
+            #print(f"env: {env} ;\n\nproc: {args}");
+            env[expr[1]] = eval(expr[2], env)
         elif op == Symbol("if"):
             if eval(args[0], env) == True:
                 return eval(args[1], env)
@@ -218,7 +219,6 @@ def eval(expr , env = global_env):
                     if isinstance(value, Error): #Checks if any of the variable lookup returned an error
                         return value
                     values.append(value)
-                print(f"env: {env} ;\n\nproc: {procedure} ;\n\nargs {values}");
                 return procedure(*values)
 
                     

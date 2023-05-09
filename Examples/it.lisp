@@ -1,7 +1,5 @@
-(define walk-list (lambda (lst fun)
-   (if (not (list? lst))
-      (fun lst)
-      (if (not (null? lst))
-         (begin
-            (walk-list (car lst) fun)
-            (walk-list (cdr lst) fun))))))
+(define walk 
+	(lambda (lst fun)
+ 	  (if	(null? lst))
+		()
+		(begin (fun (car lst))(walk (cdr lst)))))

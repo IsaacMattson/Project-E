@@ -104,12 +104,17 @@ def native_env() -> Environment:
 global_env = native_env();
 
 
-    
+def strip_coms(text) -> str:
+    regex = r';.*\n'    # Matches to all comments, that
+                        # are a ';' token, with zero or more of any token, and \
+                        # end with a '\n' token.
+    text = re.sub(regex, ' ', text )
+    return text
 
-def lex(text) -> str:
-   
-    regex = r'("[^"]*"|\S+)' #This is the regex to create tokens could be changed to accomdate new grammers
-    text = text.replace(')', ' ) ').replace('(', ' ( ')
+def lex(text) -> list:
+    text = strip_coms(text)
+    regex = r'("[^"]*"|\S+)' #This is a regex that does cool stuff.
+    text = text.replace(')', ' ) ').replace('(', ' ( ').replace('\n', ' ').replace('\t', ' ')
     tokens = re.findall(regex,text)
     
     
@@ -225,11 +230,12 @@ def eval(expr , env = global_env):
                     return procedure(*values)
                 
     except ArithmeticError:
-        return Error("Math Error: F!")
+        return Error("Math Error: F!", expr)
     except RecursionError:
-        return Error("Stack Overflow: Oops!")
+        return Error("Stack Overflow: Oops!", expr)
     except TypeError:
-        return Error("Type Error: Illegal procedure on some type! Good Luck :)", expr)
+        return Error(
+            "Type Error: Illegal procedure on some type! Good Luck :)", expr)
     except UserError as e:
         return Error(str(e), expr)
                     

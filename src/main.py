@@ -73,19 +73,24 @@ def native_env() -> Environment:
         Symbol('load'):     lambda p : solve(p),
         Symbol('slurp'):    lambda f : load_prgm(f),
         Symbol('dict'):     lambda x ,y: dict(zip(x,y)),
-        Symbol('append-dict!'): add_dict,
+        Symbol('append-dict!'):
+                            add_dict,
         Symbol('display'):  print,
         Symbol('input'):    lambda x: input(x),
         Symbol('throw'):    raise_error,
+        Symbol('and'):      lambda a, b: True if a and b else False,
+        Symbol('or'):       lambda a, b: True if a or b else False,
 
         #Strings
-        Symbol('combine-strings'): lambda a,b : a+b,
-        Symbol('substring'): lambda s, a, b: s[a:b],
-        Symbol('not'): lambda b: False if b else True,
+        Symbol('combine-strings'):
+                            lambda a,b : str(a)+str(b),
+        Symbol('substring'):lambda s, a, b: s[a:b],
+        Symbol('not'):      lambda b: False if b else True,
         
 
         #dicts
-        Symbol('combine-dicts'): lambda a, b: a|b,
+        Symbol('combine-dicts'):
+                            lambda a, b: a|b,
 
         #lists
         Symbol("len"):      len,
@@ -289,7 +294,8 @@ def start():
         repl()
     else:
         file = load_prgm(argv[1])
-        print(solve(file)) if isinstance(file, str) else print(file)
+        solve(file) if isinstance(file, str) else print(file)
+        repl()
 
 
 start()

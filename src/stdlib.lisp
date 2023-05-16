@@ -11,9 +11,7 @@
 (define walk (lambda 	(l f)
 			(if (eq?	(len l) 1) 
 					(f (car l)) 
-					(begin (f (car l ))(walk (cdr l) f)))))
-(define one-true? (lambda	(l)
-				(let (w (lambda (l) ()) ) () )))			  		
+					(begin (f (car l ))(walk (cdr l) f)))))			  		
 
 (display "Standered Library Loaded!") ;This is just to test if the lib has loaded
 

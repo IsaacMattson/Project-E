@@ -78,14 +78,24 @@ def native_env() -> Environment:
         Symbol('display'):  print,
         Symbol('input'):    lambda x: input(x),
         Symbol('throw'):    raise_error,
+    
+        #bool
+        Symbol('='):        eq,
+        Symbol('<'):        lambda a, b: False if a > b else True,
+        Symbol('not'):      lambda b: False if b else True,
         Symbol('and'):      lambda a, b: True if a and b else False,
         Symbol('or'):       lambda a, b: True if a or b else False,
+        Symbol('lst?'):     lambda s : isinstance(s, list),
+        Symbol('null?'):    lambda s : s == None,
+        Symbol('string?'):  lambda x : isinstance(x, str),
+        Symbol('dict?'):    lambda x : isinstance(x, dict),
+        
 
         #Strings
         Symbol('combine-strings'):
                             lambda a,b : str(a)+str(b),
         Symbol('substring'):lambda s, a, b: s[a:b],
-        Symbol('not'):      lambda b: False if b else True,
+
         
 
         #dicts
@@ -97,13 +107,9 @@ def native_env() -> Environment:
         Symbol("list"):     lambda *x: list(x),
 
         #conversions
-        Symbol("string->list"): lambda s: [x for x in s],
+        Symbol("string->list"): lambda s: [x for x in s]
 
-        #test
-        Symbol('lst?'):     lambda s : isinstance(s, list),
-        Symbol('null?'):    lambda s : s == None
-        
-    })
+            })
     return env
 
 global_env = native_env();
@@ -264,11 +270,12 @@ def solve(text):
         lexed,error = lex(text)
         #print(lexed)
         if error != None: raise label
-        parsed = parse(lexed)[0]
-
-        #print(crawl(parsed))
-    
-        result = eval(parsed)
+        try:
+            parsed = parse(lexed)[0] 
+            result = eval(parsed)
+        except:
+            result = None
+        
     except label:
         return error
     return result
@@ -284,7 +291,7 @@ def repl():
             break
         else:
             res = solve(_input)
-            print(res) if res != None else None
+            print(output(res)) if res != None else None
             
 
 lex('(+ 12 34 cat)')
@@ -297,5 +304,25 @@ def start():
         solve(file) if isinstance(file, str) else print(file)
         repl()
 
+def output(expr): #convert python to lisp code
 
+    string = ''
+
+    if isof(expr, list) == False: #expr not a list
+        return expr
+    else: #expr is a list
+        string+= '('
+        while len(expr) != 0:
+            if isof(expr[0], list):
+                
+                string += str(output(expr[0]))
+                
+            else:
+                string += ' '
+                string += str(output(expr[0]))
+            expr.pop(0)
+        string+= ')'
+            
+    return string
+    
 start()

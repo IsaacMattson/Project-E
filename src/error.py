@@ -4,7 +4,7 @@ class Error():
         self.msg = msg
         self.expr = expr
     def __repr__(self):
-        return self.msg + f"\nExpression:{self.expr}"
+        return  f"\033[1;31m{self.msg}\nExpression:{self.expr}\033[0m"
 
 class MissingSymbolError(Error):
     errorType = 'Symbol Error:'

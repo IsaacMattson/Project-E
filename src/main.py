@@ -60,6 +60,40 @@ class Environment(dict):
             s = s+f"[{key}: {self[key]}]\n"
         return s[:-1]
                     
+def output(expr): #convert python to lisp code
+
+    string = ''
+
+    if isof(expr, list) == False: #expr not a list
+ 
+        string = ''
+        if expr == True:
+            string += '#t'
+        elif expr == False:
+            string += '#f'
+        else:
+            string += str(expr)
+        return string
+    else: #expr is a list
+        string+= '('
+        while len(expr) != 0:
+            if isof(expr[0], list):
+                
+                string += str(output(expr[0]))
+                
+            else:
+                string += ' '
+                if expr[0] == True:
+                    string += '#t'
+                elif expr[0] == False:
+                    string += '#f'
+                else:
+                    string += str(output(expr[0]))
+            expr.pop(0)
+        string+= ')'
+            
+    return string  
+                 
 def native_env() -> Environment:
     env = Environment()
     env.update({
@@ -67,7 +101,6 @@ def native_env() -> Environment:
         Symbol('-'):        sub,
         Symbol('*'):        mul,
         Symbol('/'):        div,
-        Symbol('eq?'):      eq,
         Symbol('car'):      lambda lst : lst[0],
         Symbol('cdr'):      lambda lst : lst[1:],
         Symbol('load'):     lambda p : solve(p),
@@ -78,10 +111,11 @@ def native_env() -> Environment:
         Symbol('display'):  print,
         Symbol('input'):    lambda x: input(x),
         Symbol('throw'):    raise_error,
+        Symbol('format'):   output,
     
         #bool
         Symbol('='):        eq,
-        Symbol('<'):        lambda a, b: False if a > b else True,
+        Symbol('<'):        lambda a, b: True if a < b else False,
         Symbol('not'):      lambda b: False if b else True,
         Symbol('and'):      lambda a, b: True if a and b else False,
         Symbol('or'):       lambda a, b: True if a or b else False,
@@ -241,12 +275,12 @@ def eval(expr , env = global_env):
                     return procedure(*values)
                 
     except ArithmeticError:
-        return Error("Math Error: F!", expr)
+        return Error("Math Error: F!", output(expr))
     except RecursionError:
-        return Error("Stack Overflow: Oops!", expr)
+        return Error("Stack Overflow: Oops!", output(expr))
     except TypeError:
         return Error(
-            "Type Error: Illegal procedure on some type! Good Luck :)", expr)
+            "Type Error: Illegal procedure on some type! Good Luck :)", output(expr))
     except UserError as e:
         return Error(str(e), expr)
                     
@@ -291,7 +325,7 @@ def repl():
             break
         else:
             res = solve(_input)
-            print(output(res)) if res != None else None
+            print(f"\033[1m{output(res)}\033[0m") if res != None else None
             
 
 lex('(+ 12 34 cat)')
@@ -304,25 +338,6 @@ def start():
         solve(file) if isinstance(file, str) else print(file)
         repl()
 
-def output(expr): #convert python to lisp code
 
-    string = ''
-
-    if isof(expr, list) == False: #expr not a list
-        return expr
-    else: #expr is a list
-        string+= '('
-        while len(expr) != 0:
-            if isof(expr[0], list):
-                
-                string += str(output(expr[0]))
-                
-            else:
-                string += ' '
-                string += str(output(expr[0]))
-            expr.pop(0)
-        string+= ')'
-            
-    return string
     
 start()

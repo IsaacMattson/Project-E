@@ -51,9 +51,10 @@ class Environment(dict):
                 return self
             else:
                 if self.parent != None:
-                   return self.parent.find(key)
+                    return self.parent.find(key)
                 else:
-                   return Error(f"Symbol '{key}' not found!"); 
+                    raise NameError
+
     def __repr__(self):
         s = ""
         for key in self.keys():
@@ -212,77 +213,79 @@ def crawl(prgm):
     return errors
 
 def eval(expr , env = global_env):
-    try:
-        if isinstance(expr, list) == False:
+    while True:
+        try:
+            if isinstance(expr, list) == False:
 
-            if isinstance(expr, Symbol):
-                x = env.find(expr)
-                if isinstance(x, Environment):           
+                if isinstance(expr, Symbol):
+                    x = env.find(expr)
                     return x[expr]
                 else:
-                    return x
-
-            else:
-                return expr
-        elif expr == []:
-            return None
-        else:      
-            op = expr[0]
-            args = expr[1:]
-            if isinstance(op, (int, str, dict)):
-                return expr
-            elif op == Symbol("lambda"):
-                return Procedure(expr[1], expr[2], env)
-            elif op == Symbol("define"):
-                #print(f"env: {env} ;\n\nproc: {args}");
-                env[expr[1]] = eval(expr[2], env)
-            elif op == Symbol("if"):
-                if eval(args[0], env) == True:
-                    return eval(args[1], env)
-                else: return eval(args[2], env)
-            elif op == Symbol("quote"):
-                return args[0]
-            elif op == Symbol("begin"):
-                for arg in args[:-1]:
-                    eval(arg, env)
-                return eval(args[-1], env)
-            elif op == Symbol("let"):
-                bindingClause, letBody = args[0:2]
-                newEnv = Environment(parent = env)
-                for subClause in bindingClause:
-                    newEnv[subClause[0]] = subClause[1]
-                return eval(letBody, newEnv)
-            elif op == Symbol("set!"):
-                var, value = args[0], args[1]
-                try:
-                    env[var]
-                    env[var] = value
-                except:
-                    return MissingSymbolError(var)
-            else:        
-                procedure = eval(expr[0], env)
-                if isinstance(procedure, Error): #Checks if the procedure lookup returned an error
-                    return procedure
-                elif isinstance(procedure, (int, float, dict, str)):
-                    return Error("Error: Not Callable");
-                else:
-                    values = []
-                    for arg in expr[1:]:
-                        value = eval(arg, env)
-                        if isinstance(value, Error): #Checks if any of the variable lookup returned an error
-                            return value
-                        values.append(value)
-                    return procedure(*values)
+                    return expr
+            elif expr == []:
+                return None
+            else:      
+                op = expr[0]
+                args = expr[1:]
+                if isinstance(op, (int, str, dict)):
+                    return expr
+                elif op == Symbol("lambda"):
+                    return Procedure(expr[1], expr[2], env)
+                elif op == Symbol("define"):
+                    #print(f"env: {env} ;\n\nproc: {args}");
+                    env[expr[1]] = eval(expr[2], env)
+                    return None
+                elif op == Symbol("if"):
                 
-    except ArithmeticError:
-        return Error("Math Error: F!", output(expr))
-    except RecursionError:
-        return Error("Stack Overflow: Oops!", output(expr))
-    except TypeError:
-        return Error(
-            "Type Error: Illegal procedure on some type! Good Luck :)", output(expr))
-    except UserError as e:
-        return Error(str(e), expr)
+                    if eval(args[0], env) == True:
+                        expr = args[1]
+                    else: expr = args[2]
+                    
+                elif op == Symbol("quote"):
+                    return args[0]
+                elif op == Symbol("begin"):
+                    for arg in args[:-1]:
+                        eval(arg, env)
+                    return eval(args[-1], env)
+                elif op == Symbol("let"):
+                    bindingClause, letBody = args[0:2]
+                    newEnv = Environment(parent = env)
+                    for subClause in bindingClause:
+                        newEnv[subClause[0]] = subClause[1]
+                    return eval(letBody, newEnv)
+                elif op == Symbol("set!"):
+                    var, value = args[0], args[1]
+                    try:
+                        env[var]
+                        env[var] = value
+                    except:
+                        return MissingSymbolError(var)
+                else:        
+                    procedure = eval(expr[0], env)
+                    if isinstance(procedure, Error): #Checks if the procedure lookup returned an error
+                        return procedure
+                    elif isinstance(procedure, (int, float, dict, str)):
+                        return Error("Error: Not Callable");
+                    else:
+                        values = []
+                        for arg in expr[1:]:
+                            value = eval(arg, env)
+                            if isinstance(value, Error): #Checks if any of the variable lookup returned an error
+                                return value
+                            values.append(value)
+                        return procedure(*values)
+                    
+        except ArithmeticError:
+            return Error("Math Error: Did math wrong!", output(expr))
+        except RecursionError:
+            return Error("Stack Overflow: Oops!", output(expr))
+        except TypeError:
+            return Error(
+                "Type Error: Illegal procedure on some type! Good Luck :)", output(expr))
+        except NameError:
+            return Error("Symbol Error: Symbol Unknown!", output(expr) )
+        except UserError as e:
+            return Error(str(e), expr)
                     
 def print_errors():
     global errors
@@ -325,7 +328,7 @@ def repl():
             break
         else:
             res = solve(_input)
-            print(f"\033[1m{output(res)}\033[0m") if res != None else None
+            print(f"\033[34m{output(res)}\033[0m") if res != None else None
             
 
 lex('(+ 12 34 cat)')

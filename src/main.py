@@ -61,6 +61,28 @@ class Environment(dict):
             s = s+f"[{key}: {self[key]}]\n"
         return s[:-1]
                     
+                        
+       
+def sour(expr:list) -> list : # Will take a lisp program, and convert all the syntactical sugar to valid code, kinda like macros
+    if isof(expr, list) == False: return expr
+    for i in range(len(expr)):
+        if isof(expr[i], list):
+            expr[i] = sour(expr[i])
+        elif isof(expr[i], Symbol):
+            if expr[i].value == 'define' and isof(expr[i+1], list): #Shorthand for lambda
+                newBody = [Symbol('lambda'), expr[i+1][1:], expr[i+2]]
+                expr[i+2] = newBody
+                expr[i+1] = expr[i+1][0]
+            elif expr[i].value == "`":
+                newArg = [Symbol('quote'), expr[i+1]]
+                expr[i] = newArg
+                expr.pop(i+1)
+                
+                
+    
+    return expr
+    
+                    
 def output(expr): #convert python to lisp code
 
     string = ''
@@ -68,9 +90,9 @@ def output(expr): #convert python to lisp code
     if isof(expr, list) == False: #expr not a list
  
         string = ''
-        if expr == True:
+        if expr == True and isof(expr, bool):
             string += '#t'
-        elif expr == False:
+        elif expr == False and isof(expr, bool):
             string += '#f'
         else:
             string += str(expr)
@@ -84,9 +106,9 @@ def output(expr): #convert python to lisp code
                 
             else:
                 string += ' '
-                if expr[0] == True:
+                if expr[0] == True and isof(expr[0], bool):
                     string += '#t'
-                elif expr[0] == False:
+                elif expr[0] == False and isof(expr[0], bool):
                     string += '#f'
                 else:
                     string += str(output(expr[0]))
@@ -160,7 +182,7 @@ def strip_coms(text) -> str:
 def lex(text) -> list:
     text = strip_coms(text)
     regex = r'("[^"]*"|\S+)' #This is a regex that does cool stuff.
-    text = text.replace(')', ' ) ').replace('(', ' ( ').replace('\n', ' ').replace('\t', ' ')
+    text = text.replace(')', ' ) ').replace('(', ' ( ').replace('\n', ' ').replace('\t', ' ').replace('\\x1b', '\x1b').replace('`', ' ` ')
     tokens = re.findall(regex,text)
     
     
@@ -197,18 +219,24 @@ def parse(expr) -> list:
 
 def crawl(prgm):
     errors = []
+    counter = 0
 
     if isinstance(prgm, list):
         op = prgm[0]
-        if prgm[0] == 'if':
+        if isof(op, list):
+            errors += crawl(op)
+        if prgm[0] == Symbol('if'):
             if len(prgm) != 4:
-                errors.append(Error("'if' special form requires three arguments!"))
-        if op == 'define':
+                errors.append(Error("'if' special form requires three arguments!", output(prgm)))
+        if op == Symbol('define'):
             if len(prgm) != 3:
-                errors.append(Error("'define' special form requires two arguments!"))
+                errors.append(Error("'define' special form requires two arguments!", output(prgm)))
 
         for arg in prgm[1:] :
-            errors.append(crawl(arg))
+                errors = errors + crawl(arg)
+
+                
+                
 
     return errors
 
@@ -307,23 +335,35 @@ def solve(text):
         lexed,error = lex(text)
         #print(lexed)
         if error != None: raise label
-        try:
-            parsed = parse(lexed)[0] 
+        #try:
+        parsed = parse(lexed)[0] 
+        
+        crawled  = crawl(parsed)
+        
+        if crawled != []:
+            for error in crawled:print(error) 
+            return None
+        else:
+            print(parsed)
+            parsed = sour(parsed)
             result = eval(parsed)
-        except:
-            result = None
+        
+        #except:
+         #   result = None
         
     except label:
         return error
     return result
 
-def repl():
+def repl(prompt = 'Geoff> '):
 
+    print("\n\x1b[5mGeoff Lisp-like Interpreter!\x1b[0m\n")
     _input = ""
     solve('(load (slurp "stdlib.lisp"))')
     
+    
     while True:
-        _input = input("Geoff>")
+        _input = input(prompt)
         if _input == "!QUIT":
             break
         else:

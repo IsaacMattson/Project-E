@@ -28,18 +28,19 @@ class label(Exception): pass
 
 class Procedure:
 
-    def __init__(self, parms, body, env, isSpecial = False):
+    def __init__(self, parms, body, env, isMacro = False):
         self.parms = parms
         self.body = body
         self.env = env
-        self.isSpecial = isSpecial
+        self.isMacro = isMacro
         self.argCount = len(parms)
 
     def __call__(self, *args):
         return eval(self.body, Environment(self.parms, args, self.env))
 
-    
-    
+
+        
+   
 class Environment(dict):
 
     def __init__(self, keys = (), values = (), parent = None):
@@ -65,7 +66,9 @@ class Environment(dict):
        
 def sour(expr:list) -> list : # Will take a lisp program, and convert all the syntactical sugar to valid code, kinda like macros
     if isof(expr, list) == False: return expr
-    for i in range(len(expr)):
+    
+    i = 0
+    while i < len(expr):
         if isof(expr[i], list):
             expr[i] = sour(expr[i])
         elif isof(expr[i], Symbol):
@@ -77,6 +80,8 @@ def sour(expr:list) -> list : # Will take a lisp program, and convert all the sy
                 newArg = [Symbol('quote'), expr[i+1]]
                 expr[i] = newArg
                 expr.pop(i+1)
+        
+        i += 1
                 
                 
     
@@ -221,7 +226,7 @@ def crawl(prgm):
     errors = []
     counter = 0
 
-    if isinstance(prgm, list):
+    if isinstance(prgm, list) and prgm != []:
         op = prgm[0]
         if isof(op, list):
             errors += crawl(op)
@@ -229,7 +234,7 @@ def crawl(prgm):
             if len(prgm) != 4:
                 errors.append(Error("'if' special form requires three arguments!", output(prgm)))
         if op == Symbol('define'):
-            if len(prgm) != 3:
+            if len(prgm) < 3:
                 errors.append(Error("'define' special form requires two arguments!", output(prgm)))
 
         for arg in prgm[1:] :
@@ -252,6 +257,8 @@ def eval(expr , env = global_env):
                     return expr
             elif expr == []:
                 return None
+            elif isinstance(expr[0], list):
+                return eval(expr[0], env)
             else:      
                 op = expr[0]
                 args = expr[1:]
@@ -262,6 +269,11 @@ def eval(expr , env = global_env):
                 elif op == Symbol("define"):
                     #print(f"env: {env} ;\n\nproc: {args}");
                     env[expr[1]] = eval(expr[2], env)
+                    return None
+                elif op == Symbol("define-macro"):  
+                
+                    macro = Procedure(expr[2], expr[3], env, True)
+                    env[expr[1]] = macro
                     return None
                 elif op == Symbol("if"):
                 
@@ -288,12 +300,18 @@ def eval(expr , env = global_env):
                         env[var] = value
                     except:
                         return MissingSymbolError(var)
-                else:        
+                elif op == Symbol('eval'):
+                    return eval(expr[1], env)
+                        
+                else:        # APPLY
                     procedure = eval(expr[0], env)
                     if isinstance(procedure, Error): #Checks if the procedure lookup returned an error
                         return procedure
-                    elif isinstance(procedure, (int, float, dict, str)):
+                    elif isinstance(procedure, (int, float, dict, str, list)): #ensures it is a procedure/macro
                         return Error("Error: Not Callable");
+                    elif hasattr(procedure, 'isMacro') and procedure.isMacro == True  :               
+                        newCode = procedure(expr[1:])
+                        return eval(newCode, env)
                     else:
                         values = []
                         for arg in expr[1:]:
@@ -382,5 +400,5 @@ def start():
         repl()
 
 
-    
+solve('(`(+ 1 2 3))')
 start()

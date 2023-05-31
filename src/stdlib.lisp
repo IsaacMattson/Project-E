@@ -7,8 +7,7 @@
 		(x)
 		(* x x x)))
 		
-(define ! (lambda
-		(n)
+(define ! (lambda (n)
 		(if (= n 0)
 		1
 		(* n (! (- n 1))))))
@@ -33,6 +32,7 @@
 			(if (or (> a b) (= a b))
 				#t
 				#f)))
+				
 				
 
 (display "Standered Library Loaded!") ;This is just to test if the lib has loaded

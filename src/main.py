@@ -20,7 +20,10 @@ class Symbol():
         return self.__repr__() == other.__repr__()
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(self.__repr__())
+       
+    def __str__(self):
+        return self.value
     
 
 class label(Exception): pass
@@ -193,6 +196,13 @@ def lex(text) -> list:
     
         
     return tokens, None
+    
+def isFloat(a):
+    try:
+        float(a)
+        return True
+    except:
+        return False
 
 def parse(expr) -> list:  
     tokens = []
@@ -208,8 +218,8 @@ def parse(expr) -> list:
         elif word == ")":
             expr.pop(0)
             return tokens
-        elif word.isnumeric():
-            tokens.append(int(word))
+        elif isFloat(word):
+            tokens.append(float(word))
             expr.pop(0)
         elif word[0] == '"':
             tokens.append(word[1:-1])
@@ -266,14 +276,11 @@ def eval(expr , env = global_env):
                     return expr
                 elif op == Symbol("lambda"):
                     return Procedure(expr[1], expr[2], env)
+                elif op == Symbol('macro'):
+                    return Procedure(expr[1], expr[2], env, True)
                 elif op == Symbol("define"):
                     #print(f"env: {env} ;\n\nproc: {args}");
                     env[expr[1]] = eval(expr[2], env)
-                    return None
-                elif op == Symbol("define-macro"):  
-                
-                    macro = Procedure(expr[2], expr[3], env, True)
-                    env[expr[1]] = macro
                     return None
                 elif op == Symbol("if"):
                 
@@ -309,8 +316,11 @@ def eval(expr , env = global_env):
                         return procedure
                     elif isinstance(procedure, (int, float, dict, str, list)): #ensures it is a procedure/macro
                         return Error("Error: Not Callable");
-                    elif hasattr(procedure, 'isMacro') and procedure.isMacro == True  :               
-                        newCode = procedure(expr[1:])
+                    elif hasattr(procedure, 'isMacro') and procedure.isMacro == True :        
+                        
+                        print(expr[1:])
+                        newCode = procedure(*expr[1:])
+                        
                         return eval(newCode, env)
                     else:
                         values = []
@@ -351,7 +361,7 @@ def solve(text):
     try:
         if isinstance(text, Error): error = text; raise label
         lexed,error = lex(text)
-        #print(lexed)
+        
         if error != None: raise label
         #try:
         parsed = parse(lexed)[0] 
@@ -362,7 +372,7 @@ def solve(text):
             for error in crawled:print(error) 
             return None
         else:
-            print(parsed)
+            
             parsed = sour(parsed)
             result = eval(parsed)
         

@@ -316,13 +316,14 @@ def eval(expr , env = global_env):
                         return procedure
                     elif isinstance(procedure, (int, float, dict, str, list)): #ensures it is a procedure/macro
                         return Error("Error: Not Callable");
-                    elif hasattr(procedure, 'isMacro') and procedure.isMacro == True :        
+                        
+                    elif hasattr(procedure, 'isMacro') and procedure.isMacro == True :   #MACROS     
                         
                         print(expr[1:])
                         newCode = procedure(*expr[1:])
                         
                         return eval(newCode, env)
-                    else:
+                    else:                                                                #PROCEDURES
                         values = []
                         for arg in expr[1:]:
                             value = eval(arg, env)

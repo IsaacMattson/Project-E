@@ -40,9 +40,20 @@ class Procedure:
 
     def __call__(self, *args):
         return eval(self.body, Environment(self.parms, args, self.env))
-
-
         
+class Macro:
+    pass
+        
+class Proc:
+
+    def __init__(self, parms, body, env):
+        self.parms = parms
+        self.body = body
+        self.env = env
+
+    def apply(self, *args):
+        return self.body, Environment(self.parms, args, self.env)
+
    
 class Environment(dict):
 
@@ -275,7 +286,7 @@ def eval(expr , env = global_env):
                 if isinstance(op, (int, str, dict)):
                     return expr
                 elif op == Symbol("lambda"):
-                    return Procedure(expr[1], expr[2], env)
+                    return Proc(expr[1], expr[2], env)
                 elif op == Symbol('macro'):
                     return Procedure(expr[1], expr[2], env, True)
                 elif op == Symbol("define"):
@@ -293,7 +304,8 @@ def eval(expr , env = global_env):
                 elif op == Symbol("begin"):
                     for arg in args[:-1]:
                         eval(arg, env)
-                    return eval(args[-1], env)
+                        
+                    expr = args[-1]
                 elif op == Symbol("let"):
                     bindingClause, letBody = args[0:2]
                     newEnv = Environment(parent = env)
@@ -330,7 +342,12 @@ def eval(expr , env = global_env):
                             if isinstance(value, Error): #Checks if any of the variable lookup returned an error
                                 return value
                             values.append(value)
-                        return procedure(*values)
+                        
+                        if isof(procedure, Proc):
+                            expr, env = procedure.apply(*values)
+                            
+                        else:
+                            return procedure(*values)
                     
         except ArithmeticError:
             return Error("Math Error: Did math wrong!", output(expr))

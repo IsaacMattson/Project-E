@@ -331,9 +331,9 @@ def eval(expr , env = global_env):
                         
                     elif hasattr(procedure, 'isMacro') and procedure.isMacro == True :   #MACROS     
                         
-                        print(expr[1:])
-                        newCode = procedure(*expr[1:])
                         
+                        newCode = procedure(*expr[1:])
+                        print(newCode)
                         return eval(newCode, env)
                     else:                                                                #PROCEDURES
                         values = []

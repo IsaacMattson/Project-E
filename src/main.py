@@ -41,12 +41,10 @@ class Procedure:
     def __call__(self, *args):
         return eval(self.body, Environment(self.parms, args, self.env))
         
-class Macro:
-    pass
         
 class Proc:
 
-    def __init__(self, parms, body, env):
+    def __init__(self, parms, body, env, isMacro = False):
         self.parms = parms
         self.body = body
         self.env = env
@@ -135,6 +133,11 @@ def output(expr): #convert python to lisp code
         string+= ')'
             
     return string  
+    
+def lib(name):
+    global global_env
+    lib = __import__(name)
+    global_env.update(lib.lib_env)
                  
 def native_env() -> Environment:
     env = Environment()
@@ -154,6 +157,7 @@ def native_env() -> Environment:
         Symbol('input'):    lambda x: input(x),
         Symbol('throw'):    raise_error,
         Symbol('format'):   output,
+        Symbol('load-lib'): lib,
     
         #bool
         Symbol('='):        eq,
@@ -327,7 +331,7 @@ def eval(expr , env = global_env):
                     if isinstance(procedure, Error): #Checks if the procedure lookup returned an error
                         return procedure
                     elif isinstance(procedure, (int, float, dict, str, list)): #ensures it is a procedure/macro
-                        return Error("Error: Not Callable");
+                        return Error("Error: Not Callable", output(expr));
                         
                     elif hasattr(procedure, 'isMacro') and procedure.isMacro == True :   #MACROS     
                         

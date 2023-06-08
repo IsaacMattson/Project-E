@@ -38,5 +38,12 @@ def add_dict(a,b):
 def l_input(string):
     return input(string);
 
+def load_lib(name):
+    global global_env
+    lib = __import__(name)
+    global_env.update(lib.lib_env)
+    
+def test():
+    pass
 
         

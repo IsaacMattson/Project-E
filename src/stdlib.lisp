@@ -11,6 +11,7 @@
 		(if (= n 0)
 		1
 		(* n (! (- n 1))))))
+		
 
 ;;; ===Other Procs=== ;;;
 (define walk (lambda	(l f)
@@ -32,6 +33,9 @@
 			(if (or (> a b) (= a b))
 				#t
 				#f)))
+		
+(define when 	(macro (x y)
+				(list `if x y ())))
 				
 				
 

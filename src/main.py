@@ -9,6 +9,14 @@ import re
 literal = (int, dict)
 isof = isinstance
 
+class Pair():
+    def __init__(self, car, cdr = None):
+        self.car = car
+        self.cdr = cdr
+    
+    def __repr__(self):
+        return f"{self.car} | {self.cdr}"
+
 class Symbol():
     def __init__(self, value):
         self.value = value;
@@ -432,5 +440,6 @@ def start():
         repl()
 
 
-solve('(`(+ 1 2 3))')
-start()
+if __name__ == "__main__":
+    start()
+

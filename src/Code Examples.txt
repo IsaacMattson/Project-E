@@ -1,0 +1,21 @@
+;;Basic Syntax
+(+ 1 2 )
+(* (/ 6 2) 2  (+ 3 2) ) 
+(square 3)
+(= 3 3)
+
+;;Variables
+(define x 3)
+(define y 4)
+
+;;Conditionals
+(if (= 3 3) "Equal" "Not equal")
+(when (> x 5) "x is over 5")
+
+;;Quoteing
+(list `Hello, `World!)
+(display `(1 2 3))
+(list `(+ 1 2) `is (+ 1 2))
+
+''Procedure
+(define (isThree num) (when (= num 3) "Is Three!") 

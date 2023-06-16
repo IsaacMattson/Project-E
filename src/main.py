@@ -1,8 +1,10 @@
 import math
 from funcs import *
 from error import *
+from env import *
 from sys import argv, stdout
 import re
+
             
 
 
@@ -37,7 +39,7 @@ class Symbol():
 class label(Exception): pass
     
 
-class Procedure:
+class Proc:
 
     def __init__(self, parms, body, env, isMacro = False):
         self.parms = parms
@@ -45,17 +47,6 @@ class Procedure:
         self.env = env
         self.isMacro = isMacro
         self.argCount = len(parms)
-
-    def __call__(self, *args):
-        return eval(self.body, Environment(self.parms, args, self.env))
-        
-        
-class Proc:
-
-    def __init__(self, parms, body, env, isMacro = False):
-        self.parms = parms
-        self.body = body
-        self.env = env
 
     def apply(self, *args):
         return self.body, Environment(self.parms, args, self.env)
@@ -143,11 +134,11 @@ def output(expr): #convert python to lisp code
     return string  
     
 def lib(name):
-    global global_env
+    global globalEnv
     lib = __import__(name)
-    global_env.update(lib.lib_env)
+    globalEnv.update(lib.lib_env)
                  
-def native_env() -> Environment:
+def gen_globalEnv() -> Environment:
     env = Environment()
     env.update({
         Symbol('+'):        add,
@@ -200,7 +191,7 @@ def native_env() -> Environment:
             })
     return env
 
-global_env = native_env();
+globalEnv = gen_globalEnv();
 
 
 def strip_coms(text) -> str:
@@ -220,7 +211,7 @@ def lex(text) -> list:
         
     return tokens, None
     
-def isFloat(a):
+def isFloat(a) -> bool:
     try:
         float(a)
         return True
@@ -241,6 +232,9 @@ def parse(expr) -> list:
         elif word == ")":
             expr.pop(0)
             return tokens
+        elif word.isnumeric():
+            tokens.append(int(word))
+            expr.pop(0)
         elif isFloat(word):
             tokens.append(float(word))
             expr.pop(0)
@@ -255,7 +249,7 @@ def parse(expr) -> list:
             expr.pop(0)
     return tokens
 
-def crawl(prgm):
+def crawl(prgm) -> list:
     errors = []
     counter = 0
 
@@ -278,7 +272,7 @@ def crawl(prgm):
 
     return errors
 
-def eval(expr , env = global_env):
+def eval(expr , env = globalEnv) -> (list, int, float, list, Proc):
     while True:
         try:
             if isinstance(expr, list) == False:
@@ -300,7 +294,7 @@ def eval(expr , env = global_env):
                 elif op == Symbol("lambda"):
                     return Proc(expr[1], expr[2], env)
                 elif op == Symbol('macro'):
-                    return Procedure(expr[1], expr[2], env, True)
+                    return Proc(expr[1], expr[2], env, True)
                 elif op == Symbol("define"):
                     #print(f"env: {env} ;\n\nproc: {args}");
                     env[expr[1]] = eval(expr[2], env)
@@ -341,12 +335,10 @@ def eval(expr , env = global_env):
                     elif isinstance(procedure, (int, float, dict, str, list)): #ensures it is a procedure/macro
                         return Error("Error: Not Callable", output(expr));
                         
-                    elif hasattr(procedure, 'isMacro') and procedure.isMacro == True :   #MACROS     
+                    elif hasattr(procedure, 'isMacro') and procedure.isMacro == True :   #MACROS                          
+                        expr, env = procedure.apply(*expr[1:])
+                        expr = eval(expr,env)
                         
-                        
-                        newCode = procedure(*expr[1:])
-                        print(newCode)
-                        return eval(newCode, env)
                     else:                                                                #PROCEDURES
                         values = []
                         for arg in expr[1:]:
